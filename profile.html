@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Profile</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="profile-container">
+        <header>
+            <h1>Student Profile</h1>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        </header>
+        <main>
+            <section id="user-info" class="card">
+                <h2>Basic Information</h2>
+                <div id="user-details"></div>
+            </section>
+            <section id="xp-stats" class="card">
+                <h2>XP Progress</h2>
+                <svg id="xp-graph" width="600" height="300"></svg>
+            </section>
+            <section id="audit-stats" class="card">
+                <h2>Audit Statistics</h2>
+                <svg id="audit-graph" width="400" height="400"></svg>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+    <script src="profile.js"></script>
+</body>
+</html>
