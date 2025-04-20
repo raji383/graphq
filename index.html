@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Student Profile</title>
+    <title>Student Profile</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="login-container">
+    <div id="login-section" class="login-container">
         <h1>Login</h1>
         <form onsubmit="event.preventDefault(); login();">
             <input type="text" id="username" placeholder="Username or Email" required>
@@ -19,7 +19,32 @@
         <div id="error-message"></div>
     </div>
 
+    <div id="profile-section" class="profile-container" style="display: none;">
+        <header>
+            <h1>Student Profile</h1>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        </header>
+        <main>
+            <section id="user-info" class="card">
+                <h2>Basic Information</h2>
+                <div id="user-details"></div>
+            </section>
+            <section id="Best-skills" class="card">
+                <h2>Best skills</h2>
+                <svg id="xp-graph" width="900" height="400"></svg>
+              </section>
+              
+            <section id="audit-stats" class="card">
+                <h2>Audit Statistics</h2>
+                <svg id="audit-graph" width="540" height="400">
+                    
+                </svg>
+            </section>
+        </main>
+    </div>
+
     <script src="script.js"></script>
+    <script src="profile.js"></script>
 </body>
 
 </html>
