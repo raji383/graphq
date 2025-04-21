@@ -128,41 +128,51 @@ function renderUserData(data) {
 }
 function renderSkillsGraph(userInfo) {
     const skills = [
-        { name: "Go", color: "blue", value: userInfo.go.aggregate.max.amount ?? 0 },
-        { name: "JS", color: "green", value: userInfo.js.aggregate.max.amount ?? 0 },
-        { name: "HTML", color: "orange", value: userInfo.html.aggregate.max.amount ?? 0 },
-        { name: "Prog", color: "purple", value: userInfo.prog.aggregate.max.amount ?? 0 },
-        { name: "Front", color: "red", value: userInfo.front.aggregate.max.amount ?? 0 },
-        { name: "Back", color: "gold", value: userInfo.back.aggregate.max.amount ?? 0 },
+        { name: "Go", value: userInfo.go?.aggregate?.max?.amount || 0 },
+        { name: "JS", value: userInfo.js?.aggregate?.max?.amount || 0 },
+        { name: "HTML", value: userInfo.html?.aggregate?.max?.amount || 0 },
+        { name: "Prog", value: userInfo.prog?.aggregate?.max?.amount || 0 },
+        { name: "Front", value: userInfo.front?.aggregate?.max?.amount || 0 },
+        { name: "Back", value: userInfo.back?.aggregate?.max?.amount || 0 },
     ];
 
-    const max = Math.max(...skills.map(s => s.value)); 
-    const svgHeight = 300;
-    const svgWidth = 600;
-    const barWidth = 50;
-    const gap = 20;
+    const labels = skills.map(skill => skill.name);
+    const data = skills.map(skill => skill.value);
 
-    let bars = `
-        <!-- Axes -->
-        <line x1="40" y1="10" x2="40" y2="${svgHeight - 20}" stroke="black" stroke-width="2" />
-        <line x1="40" y1="${svgHeight - 20}" x2="${svgWidth}" y2="${svgHeight - 20}" stroke="black" stroke-width="2" />
-    `;
+    const ctx = document.getElementById('xp-graph').getContext('2d');
 
-    skills.forEach((skill, index) => {
-        const heightPercent = skill.value / max;
-        const barHeight = heightPercent * (svgHeight - 60);
-        const x = 60 + index * (barWidth + gap);
-        const y = svgHeight - 20 - barHeight;
-
-        bars += `
-            <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${skill.color}" />
-            <text x="${x + barWidth / 2}" y="${svgHeight - 5}" text-anchor="middle" font-size="12">${skill.name}</text>
-            <text x="${x + barWidth / 2}" y="${y - 5}" text-anchor="middle" font-size="12">${skill.value}</text>
-        `;
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Skill Levels',
+                data: data,
+                backgroundColor: 'rgba(137, 104, 255, 0.4)',
+                borderColor: 'rgba(137, 104, 255, 0.8)',
+                pointBackgroundColor: '#8968ff'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                r: {
+                    angleLines: { color: '#999' },
+                    grid: { color: '#333' },
+                    pointLabels: { color: '#ccc' },
+                    suggestedMin: 0,
+                    suggestedMax: Math.max(...data) || 100
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: '#ccc' }
+                }
+            }
+        }
     });
-
-    document.getElementById("xp-graph").innerHTML = bars;
 }
+
 function progclear(userInfo) {
     const transactions = userInfo.transactions;
 
@@ -174,27 +184,26 @@ function progclear(userInfo) {
     const barWidth = 50;
     const spacing = 20;
 
-    let bars = '';
+    let bars = `
+        <line x1="40" y1="0" x2="40" y2="${svgHeight}" stroke="black" />
+        <line x1="40" y1="${svgHeight}" x2="800" y2="${svgHeight}" stroke="black" />
+        
+    `;
     
     filtered.forEach((tx, i) => {
         const barHeight = (tx.amount / maxXP) * svgHeight;
-        const x = i * (barWidth + spacing) + 50;
+        const x = i * (barWidth + spacing) + barWidth;
         const y = svgHeight - barHeight;
 
         bars += `
             <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="#4CAF50" />
             <text x="${x + barWidth / 2}" y="${svgHeight + 15}" font-size="12" text-anchor="middle">${tx.path.split('/').pop()}</text>
-            <text x="${x + barWidth / 2}" y="${y - 5}" font-size="12" text-anchor="middle">${tx.amount}</text>
+            <text x="${x + barWidth / 2}" y="${svgHeight + 35}" font-size="12" text-anchor="middle">${tx.amount}</text>
         `;
     });
 
-    const svgContent = `
-        <line x1="40" y1="0" x2="40" y2="${svgHeight}" stroke="black" />
-        <line x1="40" y1="${svgHeight}" x2="800" y2="${svgHeight}" stroke="black" />
-        ${bars}
-    `;
 
-    document.getElementById("audit-graph").innerHTML = svgContent;
+    document.getElementById("audit-graph").innerHTML = bars;
 }
 
 

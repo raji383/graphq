@@ -35,11 +35,3 @@ function logout() {
     document.getElementById('login-section').style.display = 'block';
 }
 
-window.addEventListener('load', () => {
-    const jwt = localStorage.getItem('jwt');
-    if (jwt) {
-        document.getElementById('login-section').style.display = 'none';
-        document.getElementById('profile-section').style.display = 'block';
-        fetchData();
-    }
-});
