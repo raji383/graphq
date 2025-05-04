@@ -111,99 +111,140 @@ async function fetchData() {
 }
 function renderUserData(data) {
     const userInfo = data.data;
+    let up = userInfo.user[0].totalUp;
+    let down = userInfo.user[0].totalDown;
+    let sinup = "kB";
+    let sindwon = "kB";
 
-    
+    if (up > 1000000) {
+        up = (up / 1000000).toFixed(2);
+        sinup = "MB";
+    } else if (up > 1000) {
+        up = (up / 1000).toFixed(2);
+    }
+    if (down > 1000000) {
+        down = (down / 1000000).toFixed(2);
+        sindwon = "MB";
+    } else if (down > 1000) {
+        down = (down / 1000).toFixed(2);
+    }
+
     document.getElementById('user-details').innerHTML = `
         <p>Login: ${userInfo.user[0].login}</p>
         <p>Name: ${userInfo.user[0].firstName} ${userInfo.user[0].lastName}</p>
-        <p>Total Up: ${userInfo.user[0].totalUp}</p>
-        <p>Total Down: ${userInfo.user[0].totalDown}</p>
+        <p>Total Up: ${up} ${sinup}</p>
+        <p>Total Down: ${down} ${sindwon}</p>
         <p>Level: ${userInfo.lvl.aggregate.max.amount}</p>
     `;
 
-  
     renderSkillsGraph(userInfo);
-    progclear(userInfo.user[0])
-
+    progclear(userInfo.user[0]);
 }
+
+
 function renderSkillsGraph(userInfo) {
     const skills = [
-        { name: "Go", value: userInfo.go?.aggregate?.max?.amount || 0 },
-        { name: "JS", value: userInfo.js?.aggregate?.max?.amount || 0 },
-        { name: "HTML", value: userInfo.html?.aggregate?.max?.amount || 0 },
-        { name: "Prog", value: userInfo.prog?.aggregate?.max?.amount || 0 },
-        { name: "Front", value: userInfo.front?.aggregate?.max?.amount || 0 },
-        { name: "Back", value: userInfo.back?.aggregate?.max?.amount || 0 },
+        { name: "Go", color: "blue", value: userInfo.go.aggregate.max.amount ?? 0 },
+        { name: "JS", color: "green", value: userInfo.js.aggregate.max.amount ?? 0 },
+        { name: "HTML", color: "orange", value: userInfo.html.aggregate.max.amount ?? 0 },
+        { name: "Prog", color: "purple", value: userInfo.prog.aggregate.max.amount ?? 0 },
+        { name: "Front", color: "red", value: userInfo.front.aggregate.max.amount ?? 0 },
+        { name: "Back", color: "gold", value: userInfo.back.aggregate.max.amount ?? 0 },
     ];
 
-    const labels = skills.map(skill => skill.name);
-    const data = skills.map(skill => skill.value);
-
-    const ctx = document.getElementById('xp-graph').getContext('2d');
-
-    new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Skill Levels',
-                data: data,
-                backgroundColor: 'rgba(137, 104, 255, 0.4)',
-                borderColor: 'rgba(137, 104, 255, 0.8)',
-                pointBackgroundColor: '#8968ff'
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                r: {
-                    angleLines: { color: '#999' },
-                    grid: { color: '#333' },
-                    pointLabels: { color: '#ccc' },
-                    suggestedMin: 0,
-                    suggestedMax: Math.max(...data) || 100
-                }
-            },
-            plugins: {
-                legend: {
-                    labels: { color: '#ccc' }
-                }
-            }
-        }
-    });
-}
-
-function progclear(userInfo) {
-    const transactions = userInfo.transactions;
-
-    
-    const filtered = transactions.filter(tx => tx.amount >= 5000);
-
-    const maxXP = Math.max(...filtered.map(tx => tx.amount)); 
+    const max = Math.max(...skills.map(s => s.value)); 
     const svgHeight = 300;
+    const svgWidth = 600;
     const barWidth = 50;
-    const spacing = 20;
+    const gap = 20;
 
     let bars = `
-        <line x1="40" y1="0" x2="40" y2="${svgHeight}" stroke="black" />
-        <line x1="40" y1="${svgHeight}" x2="800" y2="${svgHeight}" stroke="black" />
-        
+        <!-- Axes -->
+        <line x1="40" y1="10" x2="40" y2="${svgHeight - 20}" stroke="black" stroke-width="2" />
+        <line x1="40" y1="${svgHeight - 20}" x2="${svgWidth}" y2="${svgHeight - 20}" stroke="black" stroke-width="2" />
     `;
-    
-    filtered.forEach((tx, i) => {
-        const barHeight = (tx.amount / maxXP) * svgHeight;
-        const x = i * (barWidth + spacing) + barWidth;
-        const y = svgHeight - barHeight;
+
+    skills.forEach((skill, index) => {
+        const heightPercent = skill.value / max;
+        const barHeight = heightPercent * (svgHeight - 60);
+        const x = 60 + index * (barWidth + gap);
+        const y = svgHeight - 20 - barHeight;
 
         bars += `
-            <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="#4CAF50" />
-            <text x="${x + barWidth / 2}" y="${svgHeight + 15}" font-size="12" text-anchor="middle">${tx.path.split('/').pop()}</text>
-            <text x="${x + barWidth / 2}" y="${svgHeight + 35}" font-size="12" text-anchor="middle">${tx.amount}</text>
+            <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${skill.color}" />
+            <text x="${x + barWidth / 2}" y="${svgHeight - 5}" text-anchor="middle" font-size="12">${skill.name}</text>
+            <text x="${x + barWidth / 2}" y="${y - 5}" text-anchor="middle" font-size="12">${skill.value}</text>
         `;
     });
 
+    document.getElementById("xp-graph").innerHTML = bars;
+}
+function progclear(userInfo) {
+    const transactions = userInfo.transactions;
+    const filtered = transactions.filter(tx => tx.amount >= 5000);
 
-    document.getElementById("audit-graph").innerHTML = bars;
+    const total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
+    let xp=total
+    const radius = 100;
+    const centerX = 150;
+    const centerY = 150;
+    const circumference = 2 * Math.PI * radius;
+
+
+    if (xp>1000000){
+        xp=(xp/1000000).toFixed(2)+"MB"
+    }else if (xp>1000){
+        xp=(xp/1000).toFixed(2)
+        
+        +"KB"
+    }
+
+    let svgCircles = '';
+    let offset = 0;
+    let colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#E91E63', '#00BCD4', '#8BC34A'];
+
+    filtered.forEach((tx, i) => {
+        const percent = tx.amount / total;
+        const dash = percent * circumference;
+        const color = colors[i % colors.length];
+
+        svgCircles += `
+            <circle 
+                r="${radius}" 
+                cx="${centerX}" 
+                cy="${centerY}" 
+                fill="transparent" 
+                stroke="${color}" 
+                stroke-width="30"
+                stroke-dasharray="${dash} ${circumference - dash}" 
+                stroke-dashoffset="${-offset}"
+            />
+        `;
+        offset += dash;
+    });
+
+    // Legends
+    let legends = '';
+    filtered.forEach((tx, i) => {
+        const color = colors[i % colors.length];
+        const name = tx.path.split('/').pop();
+        const percent = ((tx.amount / total) * 100).toFixed(1);
+        legends += `
+            <rect x="320" y="${30 + i * 25}" width="15" height="15" fill="${color}" />
+            <text x="340" y="${42 + i * 25}" font-size="13">${name} (${percent}%)</text>
+        `;
+    });
+
+    const svgContent = `
+        <svg width="600" height="350">
+            ${svgCircles}
+            ${legends}
+            <circle r="${radius}" cx="${centerX}" cy="${centerY}" fill="white"/>
+            <text x="${centerX}" y="${centerY}" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="bold">XP % ${xp}</text>
+        </svg>
+    `;
+
+    document.getElementById("audit-graph").innerHTML = svgContent;
 }
 
 
