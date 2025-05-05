@@ -176,8 +176,8 @@ function renderSkillsGraph(userInfo) {
 
         bars += `
             <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${skill.color}" />
-            <text x="${x + barWidth / 2}" y="${svgHeight - 5}" text-anchor="middle" font-size="12">${skill.name}</text>
-            <text x="${x + barWidth / 2}" y="${y - 5}" text-anchor="middle" font-size="12">${skill.value}</text>
+            <text x="${x + barWidth / 2}" y="${svgHeight - 5}" text-anchor="middle" font-size="12" fill="aliceblue" > ${skill.name}</text>
+            <text x="${x + barWidth / 2}" y="${y - 5}" text-anchor="middle" font-size="12"  fill="aliceblue">${skill.value}</text>
         `;
     });
 
@@ -229,7 +229,7 @@ function progclear(user) {
         const percent = ((tx.amount / total) * 100).toFixed(1);
         legends += `
             <rect x="320" y="${30 + i * 25}" width="15" height="15" fill="${color}" />
-            <text x="340" y="${42 + i * 25}" font-size="13">${name} (${percent}%)</text>
+            <text x="340" y="${42 + i * 25}" font-size="13"  fill="aliceblue">${name} (${percent}%)</text>
         `;
     });
 
