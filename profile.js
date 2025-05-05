@@ -1,7 +1,3 @@
-const username = "your_username";
-const password = "your_password";
-const credentials = btoa(`${username}:${password}`);
-
 async function fetchData() {
     const jwt = localStorage.getItem('jwt');
 
@@ -96,11 +92,11 @@ async function fetchData() {
         });
 
         if (!response.ok) {
+            console.error("HTTP error:", response.status, await response.text());
             throw new Error('Unauthorized');
         }
 
         const data = await response.json();
-
         renderUserData(data);
     } catch (error) {
         console.error('Error:', error);
@@ -109,12 +105,16 @@ async function fetchData() {
         }
     }
 }
+
 function renderUserData(data) {
     const userInfo = data.data;
+    const transactions = userInfo.user[0].transactions;
+    const filtered = transactions.filter(tx => tx.amount >= 5000);
+    let total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
+
     let up = userInfo.user[0].totalUp;
     let down = userInfo.user[0].totalDown;
-    let sinup = "kB";
-    let sindwon = "kB";
+    let sinup = "kB", sindwon = "kB", sin = "kB";
 
     if (up > 1000000) {
         up = (up / 1000000).toFixed(2);
@@ -122,11 +122,18 @@ function renderUserData(data) {
     } else if (up > 1000) {
         up = (up / 1000).toFixed(2);
     }
+
     if (down > 1000000) {
         down = (down / 1000000).toFixed(2);
         sindwon = "MB";
     } else if (down > 1000) {
         down = (down / 1000).toFixed(2);
+    }
+    if (total > 1000000) {
+        total = (total / 1000000).toFixed(2);
+        sin = "MB";
+    } else if (total > 1000) {
+        total = (total / 1000).toFixed(2);
     }
 
     document.getElementById('user-details').innerHTML = `
@@ -135,12 +142,13 @@ function renderUserData(data) {
         <p>Total Up: ${up} ${sinup}</p>
         <p>Total Down: ${down} ${sindwon}</p>
         <p>Level: ${userInfo.lvl.aggregate.max.amount}</p>
+        <p>XP: ${total} ${sin}</p>
     `;
+
 
     renderSkillsGraph(userInfo);
     progclear(userInfo.user[0]);
 }
-
 
 function renderSkillsGraph(userInfo) {
     const skills = [
@@ -152,14 +160,10 @@ function renderSkillsGraph(userInfo) {
         { name: "Back", color: "gold", value: userInfo.back.aggregate.max.amount ?? 0 },
     ];
 
-    const max = Math.max(...skills.map(s => s.value)); 
-    const svgHeight = 300;
-    const svgWidth = 600;
-    const barWidth = 50;
-    const gap = 20;
+    const max = Math.max(...skills.map(s => s.value));
+    const svgHeight = 300, svgWidth = 600, barWidth = 50, gap = 20;
 
     let bars = `
-        <!-- Axes -->
         <line x1="40" y1="10" x2="40" y2="${svgHeight - 20}" stroke="black" stroke-width="2" />
         <line x1="40" y1="${svgHeight - 20}" x2="${svgWidth}" y2="${svgHeight - 20}" stroke="black" stroke-width="2" />
     `;
@@ -179,29 +183,24 @@ function renderSkillsGraph(userInfo) {
 
     document.getElementById("xp-graph").innerHTML = bars;
 }
-function progclear(userInfo) {
-    const transactions = userInfo.transactions;
-    const filtered = transactions.filter(tx => tx.amount >= 5000);
 
+function progclear(user) {
+    const transactions = user.transactions;
+    const filtered = transactions.filter(tx => tx.amount >= 5000);
     const total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
-    let xp=total
-    const radius = 100;
-    const centerX = 150;
-    const centerY = 150;
+    let xp = total;
+
+    const radius = 100, centerX = 150, centerY = 150;
     const circumference = 2 * Math.PI * radius;
 
-
-    if (xp>1000000){
-        xp=(xp/1000000).toFixed(2)+"MB"
-    }else if (xp>1000){
-        xp=(xp/1000).toFixed(2)
-        
-        +"KB"
+    if (xp > 1000000) {
+        xp = (xp / 1000000).toFixed(2) + "MB";
+    } else if (xp > 1000) {
+        xp = (xp / 1000).toFixed(2) + "KB";
     }
 
-    let svgCircles = '';
-    let offset = 0;
-    let colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#E91E63', '#00BCD4', '#8BC34A'];
+    let svgCircles = '', offset = 0;
+    const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#E91E63', '#00BCD4', '#8BC34A'];
 
     filtered.forEach((tx, i) => {
         const percent = tx.amount / total;
@@ -223,7 +222,6 @@ function progclear(userInfo) {
         offset += dash;
     });
 
-    // Legends
     let legends = '';
     filtered.forEach((tx, i) => {
         const color = colors[i % colors.length];
@@ -246,9 +244,5 @@ function progclear(userInfo) {
 
     document.getElementById("audit-graph").innerHTML = svgContent;
 }
-
-
-
-
 
 fetchData();
