@@ -18,12 +18,13 @@ async function login() {
         if (!response.ok) {
             throw new Error('Invalid credentials');
         }
+        console.log(response);
 
         const jwt = await response.json();
         localStorage.setItem('jwt', jwt);
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('profile-section').style.display = 'block';
-        fetchData(); 
+        fetchData();
     } catch (error) {
         document.getElementById('error-message').innerText = error.message;
     }

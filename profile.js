@@ -186,8 +186,10 @@ function renderSkillsGraph(userInfo) {
 
 function progclear(user) {
     const transactions = user.transactions;
-    const filtered = transactions.filter(tx => tx.amount >= 5000);
-    const total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
+    const filtered = transactions.filter(tx => tx.amount >= 5000 || tx.amount < 0);
+    console.log(filtered);
+
+    const total = transactions.reduce((sum, tx) => sum + tx.amount, 0);
     let xp = total;
 
     const radius = 100, centerX = 150, centerY = 150;
