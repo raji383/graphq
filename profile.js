@@ -109,8 +109,8 @@ async function fetchData() {
 function renderUserData(data) {
     const userInfo = data.data;
     const transactions = userInfo.user[0].transactions;
-    const filtered = transactions.filter(tx => tx.amount >= 5000);
-    let total = filtered.reduce((sum, tx) => sum + tx.amount, 0);
+    const filtered = transactions.filter(tx => tx.amount >= 5000 || tx.amount < 0);
+    let total = transactions.reduce((sum, tx) => sum + tx.amount, 0);
 
     let up = userInfo.user[0].totalUp;
     let down = userInfo.user[0].totalDown;
@@ -183,68 +183,161 @@ function renderSkillsGraph(userInfo) {
 
     document.getElementById("xp-graph").innerHTML = bars;
 }
-
 function progclear(user) {
-    const transactions = user.transactions;
-    const filtered = transactions.filter(tx => tx.amount >= 5000 || tx.amount < 0);
-    console.log(filtered);
-
-    const total = transactions.reduce((sum, tx) => sum + tx.amount, 0);
-    let xp = total;
-
-    const radius = 100, centerX = 150, centerY = 150;
-    const circumference = 2 * Math.PI * radius;
-
-    if (xp > 1000000) {
-        xp = (xp / 1000000).toFixed(2) + "MB";
-    } else if (xp > 1000) {
-        xp = (xp / 1000).toFixed(2) + "KB";
+    if (!user || !user.transactions || !Array.isArray(user.transactions)) {
+        console.error("User data is incorrect.");
+        return;
     }
 
-    let svgCircles = '', offset = 0;
+    const transactions = user.transactions;
+
+    const filtered = transactions.filter(tx => tx.amount >= 5000 || tx.amount < 0);
+
+    if (filtered.length === 0) {
+        document.getElementById("audit-graph").innerHTML = `
+            <div style="color: white; text-align: center; padding: 20px;">
+                no data
+            </div>
+        `;
+        return;
+    }
+
+    const total = transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+    let xp = total;
+    let xpFormatted;
+
+    if (xp >= 1000000) {
+        xpFormatted = (xp / 1000000).toFixed(2) + " MB";
+    } else if (xp >= 1000) {
+        xpFormatted = (xp / 1000).toFixed(2) + " KB";
+    } else {
+        xpFormatted = xp.toFixed(2) + " B";
+    }
+
     const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#E91E63', '#00BCD4', '#8BC34A'];
 
-    filtered.forEach((tx, i) => {
-        const percent = tx.amount / total;
-        const dash = percent * circumference;
-        const color = colors[i % colors.length];
+    const width = 1000;
+    const height = 400;
+    const margin = { top: 50, right: 160, bottom: 60, left: 60 };
+    const graphWidth = width - margin.left - margin.right;
+    const graphHeight = height - margin.top - margin.bottom;
 
-        svgCircles += `
-            <circle 
-                r="${radius}" 
-                cx="${centerX}" 
-                cy="${centerY}" 
-                fill="transparent" 
-                stroke="${color}" 
-                stroke-width="30"
-                stroke-dasharray="${dash} ${circumference - dash}" 
-                stroke-dashoffset="${-offset}"
-            />
-        `;
-        offset += dash;
+    const amounts = filtered.map(tx => tx.amount);
+    const maxAmount = Math.max(...amounts);
+    const minAmount = Math.min(...amounts);
+    const range = maxAmount - minAmount || 1;
+
+    let points = "";
+    filtered.forEach((tx, i) => {
+        const x = margin.left + (i * graphWidth) / Math.max(filtered.length - 1, 1);
+        const y = margin.top + graphHeight - ((tx.amount - minAmount) / range) * graphHeight;
+        points += `${x},${y} `;
     });
 
-    let legends = '';
+    const svgLine = points.trim() ? `
+        <polyline 
+            fill="none" 
+            stroke="#2196F3" 
+            stroke-width="2" 
+            points="${points.trim()}"
+            stroke-linejoin="round"
+            stroke-linecap="round" />
+    ` : '';
+
+    let circles = "";
     filtered.forEach((tx, i) => {
+        const x = margin.left + (i * graphWidth) / Math.max(filtered.length - 1, 1);
+        const y = margin.top + graphHeight - ((tx.amount - minAmount) / range) * graphHeight;
         const color = colors[i % colors.length];
-        const name = tx.path.split('/').pop();
-        const percent = ((tx.amount / total) * 100).toFixed(1);
+        circles += `
+            <circle cx="${x}" cy="${y}" r="6" fill="${color}" stroke="white" stroke-width="2">
+                <title>${tx.path ? tx.path.split('/').pop() : 'project' + (i + 1)}: ${tx.amount.toLocaleString()}</title>
+            </circle>
+        `;
+    });
+
+    let legends = "";
+    const legendX = width - 140;
+    const legendY = 60;
+    const maxLegendItems = 10;
+
+    filtered.slice(0, maxLegendItems).forEach((tx, i) => {
+        const color = colors[i % colors.length];
+        const name = tx.path ? tx.path.split('/').pop() : `project ${i + 1}`;
+        const percent = total > 0 ? ((Math.abs(tx.amount) / total) * 100).toFixed(1) : 0;
         legends += `
-            <rect x="320" y="${30 + i * 25}" width="15" height="15" fill="${color}" />
-            <text x="340" y="${42 + i * 25}" font-size="13"  fill="aliceblue">${name} (${percent}%)</text>
+            <rect x="${legendX}" y="${legendY + i * 25}" width="12" height="12" fill="${color}" rx="2" />
+            <text x="${legendX + 17}" y="${legendY + i * 25 + 10}" font-size="11" fill="#333">
+                ${name.length > 15 ? name.substring(0, 15) + '...' : name} (${percent}%)
+            </text>
         `;
     });
+
+    if (filtered.length > maxLegendItems) {
+        legends += `
+            <text x="${legendX}" y="${legendY + maxLegendItems * 25 + 10}" font-size="10" fill="#666">
+                and ${filtered.length - maxLegendItems} others ...
+            </text>
+        `;
+    }
+
+    let gridLines = "";
+    const gridCount = 5;
+    for (let i = 0; i <= gridCount; i++) {
+        const y = margin.top + (i * graphHeight) / gridCount;
+        const value = maxAmount - (i * range) / gridCount;
+        gridLines += `
+            <line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" 
+                  stroke="#e0e0e0" stroke-width="0.5" stroke-dasharray="2,2" />
+            <text x="${margin.left - 10}" y="${y + 4}" text-anchor="end" font-size="10" fill="#666">
+                ${value.toFixed(0).toLocaleString()}
+            </text>
+        `;
+    }
 
     const svgContent = `
-        <svg width="600" height="350">
-            ${svgCircles}
-            ${legends}
-            <circle r="${radius}" cx="${centerX}" cy="${centerY}" fill="white"/>
-            <text x="${centerX}" y="${centerY}" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="bold">XP % ${xp}</text>
+        <svg width="${width}" height="${height}" style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <text x="${width / 2}" y="25" text-anchor="middle" font-size="18" font-weight="bold" fill="#333">
+                total XP: ${xpFormatted}
+            </text>
+            
+            ${gridLines}
+            
+            <line x1="${margin.left}" y1="${margin.top + graphHeight}" 
+                  x2="${width - margin.right}" y2="${margin.top + graphHeight}" 
+                  stroke="#333" stroke-width="2"/>
+            <line x1="${margin.left}" y1="${margin.top}" 
+                  x2="${margin.left}" y2="${margin.top + graphHeight}" 
+                  stroke="#333" stroke-width="2"/>
+            
+            ${svgLine}
+            
+            ${circles}
+            
+            <g>
+                <rect x="${legendX - 10}" y="${legendY - 20}" width="145" height="${Math.min(filtered.length, maxLegendItems) * 25 + 30}" 
+                      fill="white" stroke="#ddd" rx="4" opacity="0.95"/>
+                <text x="${legendX + 55}" y="${legendY - 5}" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">
+                    Details
+                </text>
+                ${legends}
+            </g>
+            
+            <text x="${width / 2}" y="${height - 10}" text-anchor="middle" font-size="12" fill="#666">
+                project
+            </text>
+            <text x="20" y="${height / 2}" text-anchor="middle" font-size="12" fill="#666" transform="rotate(-90 20 ${height / 2})">
+                XP
+            </text>
         </svg>
     `;
 
-    document.getElementById("audit-graph").innerHTML = svgContent;
+    const targetElement = document.getElementById("audit-graph");
+    if (targetElement) {
+        targetElement.innerHTML = svgContent;
+    }
 }
+
 
 fetchData();
