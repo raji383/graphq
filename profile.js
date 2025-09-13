@@ -1,4 +1,4 @@
-async function fetchData() {
+export async function fetchData() {
     const jwt = localStorage.getItem('jwt');
 
     const query = `
@@ -202,11 +202,12 @@ function progclear(user) {
         return;
     }
 
-    const total = transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+    const total = transactions.reduce((sum, tx) => sum + tx.amount, 0);
 
     let xp = total;
     let xpFormatted;
 
+    console.log(xp);
     if (xp >= 1000000) {
         xpFormatted = (xp / 1000000).toFixed(2) + " MB";
     } else if (xp >= 1000) {
@@ -250,9 +251,24 @@ function progclear(user) {
         const x = margin.left + (i * graphWidth) / Math.max(filtered.length - 1, 1);
         const y = margin.top + graphHeight - ((tx.amount - minAmount) / range) * graphHeight;
         const color = colors[i % colors.length];
+        let XP = tx.amount;
+        if (XP < 0) {
+
+            
+            console.log(Math.abs(tx.amount) );
+        }
+        
+        if (Math.abs(tx.amount) >= 1000000) {
+
+            XP = (XP / 1000000).toFixed(0) + " MB";
+        } else if (Math.abs(tx.amount) >= 1000) {
+            XP = (XP / 1000).toFixed(0) + " KB";
+        } else {
+            XP = XP.toFixed(2) + " B";
+        }
         circles += `
             <circle cx="${x}" cy="${y}" r="6" fill="${color}" stroke="white" stroke-width="2">
-                <title>${tx.path ? tx.path.split('/').pop() : 'project' + (i + 1)}: ${tx.amount.toLocaleString()}</title>
+                <title>${tx.path ? tx.path.split('/').pop() : 'project' + (i + 1)}: ${XP}</title>
             </circle>
         `;
     });
@@ -295,10 +311,11 @@ function progclear(user) {
             </text>
         `;
     }
+    console.log(xpFormatted);
 
     const svgContent = `
         <svg width="${width}" height="${height}" style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <text x="${width / 2}" y="25" text-anchor="middle" font-size="18" font-weight="bold" fill="#333">
+            <text x="${width / 3}" y="25" text-anchor="middle" font-size="18" font-weight="bold" fill="#63b4daff">
                 total XP: ${xpFormatted}
             </text>
             
