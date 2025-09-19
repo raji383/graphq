@@ -97,6 +97,7 @@ export async function fetchData() {
         }
 
         const data = await response.json();
+
         renderUserData(data);
     } catch (error) {
         console.error('Error:', error);
@@ -108,6 +109,10 @@ export async function fetchData() {
 
 function renderUserData(data) {
     const userInfo = data.data;
+    if (!userInfo) {
+        logout();
+        return
+    }
     const transactions = userInfo.user[0].transactions;
     const filtered = transactions.filter(tx => tx.amount >= 5000 || tx.amount < 0);
     let total = transactions.reduce((sum, tx) => sum + tx.amount, 0);
@@ -254,10 +259,10 @@ function progclear(user) {
         let XP = tx.amount;
         if (XP < 0) {
 
-            
-            console.log(Math.abs(tx.amount) );
+
+            console.log(Math.abs(tx.amount));
         }
-        
+
         if (Math.abs(tx.amount) >= 1000000) {
 
             XP = (XP / 1000000).toFixed(0) + " MB";
