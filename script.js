@@ -72,11 +72,12 @@ function start() {
               </section>
               
             <section id="audit-stats" class="card">
-                <h2>Audit Statistics</h2>
+                <h2>VALID Projects</h2>
                 <svg id="audit-graph" width="700" height="400">
                     
                 </svg>
             </section>
+            <section id="audit" class="card"></section>
         </main>
     </div>
         `

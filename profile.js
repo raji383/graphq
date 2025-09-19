@@ -153,6 +153,7 @@ function renderUserData(data) {
 
     renderSkillsGraph(userInfo);
     progclear(userInfo.user[0]);
+    ratio(userInfo);
 }
 
 function renderSkillsGraph(userInfo) {
@@ -360,6 +361,72 @@ function progclear(user) {
         targetElement.innerHTML = svgContent;
     }
 }
+function ratio(userInfo) {
+    
+    const userObj = (userInfo && userInfo.user && Array.isArray(userInfo.user)) ? (userInfo.user[0] || {}) : (userInfo || {});
 
+    const upRaw = Number(userObj.totalUp ?? 0);
+    const downRaw = Number(userObj.totalDown ?? 0);
+
+    function formatWithUnits(n) {
+        let unit = "B";
+        let v = n;
+        if (Math.abs(n) >= 1000000) {
+            v = (n / 1000000).toFixed(2);
+            unit = "MB";
+        } else if (Math.abs(n) >= 1000) {
+            v = (n / 1000).toFixed(2);
+            unit = "KB";
+        } else {
+            v = n.toFixed(2);
+        }
+        return { value: v, unit };
+    }
+
+    const upFmt = formatWithUnits(upRaw);
+    const downFmt = formatWithUnits(downRaw);
+
+    const maxVal = Math.max(Math.abs(upRaw), Math.abs(downRaw), 1);
+    const percentUp = Math.abs(upRaw) / maxVal;
+    const percentDown = Math.abs(downRaw) / maxVal;
+
+    function makeCircle(label, displayStr, percent, color) {
+        const r = 36;
+        const c = 2 * Math.PI * r;
+        const offset = c * (1 - Math.max(0, Math.min(1, percent)));
+
+        return '<div class="stat-circle">' +
+            '<svg width="100" height="100" viewBox="0 0 100 100">' +
+                `<circle cx="50" cy="50" r="${r}" stroke="#2b2b2b" stroke-width="8" fill="none"/>` +
+                `<circle cx="50" cy="50" r="${r}" stroke="${color}" stroke-width="8" fill="none" ` +
+                    `stroke-dasharray="${c}" stroke-dashoffset="${offset}" ` +
+                    `stroke-linecap="round" transform="rotate(-90 50 50)" />` +
+                `<text x="50" y="52" text-anchor="middle" font-size="12" fill="white">${displayStr}</text>` +
+            '</svg>' +
+            `<div class="stat-label">${label}</div>` +
+        '</div>';
+    }
+
+    const upCircle = makeCircle('Total Up', `${upFmt.value} ${upFmt.unit}`, percentUp, '#4CAF50');
+    const downCircle = makeCircle('Total Down', `${downFmt.value} ${downFmt.unit}`, percentDown, '#f44336');
+
+    const containerHtml = '<div class="stat-circles" id="ratio-stats">' + upCircle + downCircle + '</div>';
+
+    const detailsEl = document.getElementById('audit');
+    if (detailsEl) {
+        const existing = document.getElementById('ratio-stats');
+        if (existing) existing.remove();
+        detailsEl.insertAdjacentHTML('beforeend', containerHtml);
+        return;
+    }
+
+    const auditEl = document.getElementById('audit') 
+    if (auditEl) {
+        const existing = document.getElementById('ratio-stats');
+        if (existing) existing.remove();
+        auditEl.insertAdjacentHTML('beforeend', containerHtml);
+    }
+
+}
 
 fetchData();
