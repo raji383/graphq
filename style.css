@@ -118,11 +118,6 @@ path:hover {
     opacity: 0.8;
 }
 
-.audit{
-
-}
-
-/* Ensure audit stat circles render in a single horizontal line */
 #audit {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -133,24 +128,22 @@ path:hover {
     display: flex;
     gap: 12px;
     align-items: center;
-    white-space: nowrap; /* keep items on one line */
+    white-space: nowrap;
 }
 
 #audit .stat-circle {
-    flex: 0 0 auto; /* don't shrink, keep intrinsic width */
+    flex: 0 0 auto; 
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 140px; /* larger containers for bigger circles */
+    min-width: 140px; 
 }
 
-/* Bigger SVG circles */
 #audit .stat-circle svg {
     width: 120px;
     height: 120px;
 }
 
-/* responsive: scale down on small screens */
 @media (max-width: 780px) {
     #audit .stat-circle { min-width: 120px; }
     #audit .stat-circle svg { width: 100px; height: 100px; }
