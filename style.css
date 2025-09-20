@@ -29,6 +29,7 @@ body {
     background-color: #272529;
 }
 .card{
+    width: fit-content;
     background-color: #272529;
 }
 .login-container form {

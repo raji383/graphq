@@ -68,7 +68,7 @@ function start() {
             </section>
             <section id="Best-skills" class="card">
                 <h2>Best skills</h2>
-                <svg id="xp-graph" width="900" height="400"></svg>
+                <svg id="xp-graph" width="700" height="400"></svg>
               </section>
               
             <section id="audit-stats" class="card">
